@@ -74,35 +74,73 @@ internal sealed class TransitionController
                 Logger.Info($"Session hwnd=0x{session.Hwnd.ToInt64():X} behindIcons={session.BehindIcons}");
             }
 
-            // Present radius=0 (old wallpaper only) so the surface is visible.
-            foreach (var s in sessions)
-                s.Present(0);
+            // Present radius=0 (old wallpaper only) under the icons — several
+            // frames so the cover is solid before we touch the real wallpaper.
+            for (var i = 0; i < 8; i++)
+            {
+                foreach (var s in sessions)
+                {
+                    s.Present(0);
+                    s.ReassertBehindIcons();
+                }
+                await Task.Delay(16, cancellationToken).ConfigureAwait(true);
+            }
 
-            await Dispatcher.Yield(DispatcherPriority.Background);
-            await Task.Delay(16, cancellationToken).ConfigureAwait(true);
+            // Phase A: commit under static OLD cover. Immediately re-blit +
+            // reassert z-order so any one-frame shell paint of the NEW image
+            // stays under our child (that was the start flicker).
+            Logger.Info("Phase A: committing wallpaper under static old cover");
+            _wallpaper.Apply(newPath);
 
-            Logger.Info("Animation begin");
+            // Immediate aggressive re-cover right after the call
+            for (var i = 0; i < 12; i++)
+            {
+                foreach (var s in sessions)
+                {
+                    s.Present(0);
+                    s.ReassertBehindIcons();
+                }
+                await Task.Delay(8, cancellationToken).ConfigureAwait(true);
+            }
+
+            // Remaining settle — shorter now that the post-Apply burst covers the flash.
+            const int settleMs = 300;
+            const int stepMs = 33;
+            var settleSteps = settleMs / stepMs;
+            for (var i = 0; i < settleSteps; i++)
+            {
+                await Task.Delay(stepMs, cancellationToken).ConfigureAwait(true);
+                foreach (var s in sessions)
+                {
+                    s.Present(0);
+                    s.ReassertBehindIcons();
+                }
+            }
+            Logger.Info("Phase A settle complete");
+
+            // Phase B: iris is cosmetic only — real desktop is already new.
+            Logger.Info("Phase B: animation begin");
             await AnimateAsync(sessions, durationMs, cancellationToken).ConfigureAwait(true);
-            Logger.Info("Animation complete; holding behind icons during wallpaper commit");
+            Logger.Info("Phase B: animation complete");
 
-            // Stay parented under Progman (behind icons). At full radius the new
-            // image is already painted under the icons — promoting to topmost was
-            // what made icons/apps vanish for the hold duration.
+            // Hold the final frame briefly so the last iris radius is solid.
             foreach (var s in sessions)
                 s.Present(s.MaxRadius);
 
-            _wallpaper.Apply(newPath);
-
-            // Keep re-blitting while the shell finishes its cross-fade underneath.
-            for (var i = 0; i < 15; i++)
+            for (var i = 0; i < 3; i++)
             {
-                await Task.Delay(80, cancellationToken).ConfigureAwait(true);
+                await Task.Delay(30, cancellationToken).ConfigureAwait(true);
                 foreach (var s in sessions)
                 {
                     s.Present(s.MaxRadius);
                     s.ReassertBehindIcons();
                 }
             }
+
+            // Phase C: soft remove; desktop already matches the final frame.
+            foreach (var s in sessions)
+                s.HideSoft();
+            await Task.Delay(50, cancellationToken).ConfigureAwait(true);
 
             Logger.Info("Transition finished");
         }
@@ -234,7 +272,7 @@ internal sealed class TransitionController
         private readonly DrawingBitmap _oldBmp;
         private readonly DrawingBitmap _newBmp;
         private readonly DrawingBitmap _frame;
-        private readonly IntPtr _hwnd;
+        private IntPtr _hwnd;
         private readonly IntPtr _screenDc;
         private readonly IntPtr _memDc;
         private readonly IntPtr _dib;
@@ -280,6 +318,7 @@ internal sealed class TransitionController
             EnsureWindowClass();
 
             // Create a layered popup first; reparent to Progman if host is available.
+            // WS_EX_NOREDIRECTIONBITMAP helps on Windows 11 raised-desktop mode.
             var ex = NativeMethods.WS_EX_LAYERED | NativeMethods.WS_EX_NOACTIVATE |
                      NativeMethods.WS_EX_TOOLWINDOW | NativeMethods.WS_EX_TRANSPARENT;
             var style = NativeMethods.WS_POPUP | NativeMethods.WS_VISIBLE;
@@ -311,12 +350,16 @@ internal sealed class TransitionController
             }
             else
             {
+                // Topmost uses UpdateLayeredWindow (app-managed). Do NOT call
+                // SetLayeredWindowAttributes — that switches to system-managed mode
+                // and makes ULW a no-op (invisible bridge → snap/fade on hide).
                 NativeMethods.SetWindowPos(
                     hwnd,
                     NativeMethods.HWND_TOPMOST,
                     bounds.Left, bounds.Top, w, h,
-                    NativeMethods.SWP_NOACTIVATE | NativeMethods.SWP_SHOWWINDOW);
-                Logger.Warn("Desktop host missing; GDI overlay is topmost.");
+                    NativeMethods.SWP_NOACTIVATE | NativeMethods.SWP_SHOWWINDOW |
+                    NativeMethods.SWP_FRAMECHANGED);
+                Logger.Info("GDI overlay topmost (ULW mode, no LWA).");
             }
 
             var screenDc = NativeMethods.GetDC(IntPtr.Zero);
@@ -396,23 +439,58 @@ internal sealed class TransitionController
                 _frame.UnlockBits(data);
             }
 
-            // System-managed layered (LWA): blit into the window DC.
-            // This is the path Microsoft documents for raised-desktop Progman children.
-            var wndDc = NativeMethods.GetDC(_hwnd);
-            if (wndDc == IntPtr.Zero)
+            if (BehindIcons)
             {
-                Logger.Warn($"GetDC failed for hwnd=0x{_hwnd.ToInt64():X}");
-                return;
+                // Progman child: LWA + BitBlt into window DC.
+                var wndDc = NativeMethods.GetDC(_hwnd);
+                if (wndDc == IntPtr.Zero)
+                {
+                    Logger.Warn($"GetDC failed for hwnd=0x{_hwnd.ToInt64():X}");
+                    return;
+                }
+                try
+                {
+                    var ok = NativeMethods.BitBlt(wndDc, 0, 0, w, h, _memDc, 0, 0, NativeMethods.SRCCOPY);
+                    if (!ok)
+                        Logger.Warn($"BitBlt failed err={NativeMethods.GetLastError()} hwnd=0x{_hwnd.ToInt64():X}");
+                }
+                finally
+                {
+                    NativeMethods.ReleaseDC(_hwnd, wndDc);
+                }
             }
-            try
+            else
             {
-                var ok = NativeMethods.BitBlt(wndDc, 0, 0, w, h, _memDc, 0, 0, NativeMethods.SRCCOPY);
-                if (!ok)
-                    Logger.Warn($"BitBlt failed err={NativeMethods.GetLastError()} hwnd=0x{_hwnd.ToInt64():X}");
-            }
-            finally
-            {
-                NativeMethods.ReleaseDC(_hwnd, wndDc);
+                // Top-level topmost: UpdateLayeredWindow is reliable.
+                var pptSrc = new POINT(0, 0);
+                var blend = new BLENDFUNCTION
+                {
+                    BlendOp = NativeMethods.AC_SRC_OVER,
+                    BlendFlags = 0,
+                    SourceConstantAlpha = 255,
+                    AlphaFormat = NativeMethods.AC_SRC_ALPHA
+                };
+                var size = new SIZE(w, h);
+                var pptDst = new POINT(_bounds.Left, _bounds.Top);
+                var sizePtr = Marshal.AllocHGlobal(Marshal.SizeOf<SIZE>());
+                var dstPtr = Marshal.AllocHGlobal(Marshal.SizeOf<POINT>());
+                try
+                {
+                    Marshal.StructureToPtr(size, sizePtr, false);
+                    Marshal.StructureToPtr(pptDst, dstPtr, false);
+                    // ULW requires app-managed layered mode — clear LWA by not using it;
+                    // ensure WS_EX_LAYERED and push pixels.
+                    var ok = NativeMethods.UpdateLayeredWindow(
+                        _hwnd, _screenDc, dstPtr, sizePtr, _memDc,
+                        ref pptSrc, 0, ref blend, NativeMethods.ULW_ALPHA);
+                    if (!ok)
+                        Logger.Warn($"UpdateLayeredWindow failed err={NativeMethods.GetLastError()} hwnd=0x{_hwnd.ToInt64():X}");
+                }
+                finally
+                {
+                    Marshal.FreeHGlobal(sizePtr);
+                    Marshal.FreeHGlobal(dstPtr);
+                }
             }
         }
 
@@ -430,6 +508,7 @@ internal sealed class TransitionController
             var defView = NativeMethods.FindWindowEx(progman, IntPtr.Zero, "SHELLDLL_DefView", null);
             var insertAfter = defView != IntPtr.Zero ? defView : NativeMethods.HWND_BOTTOM;
 
+            // Force fully opaque so the cover never becomes translucent during the race.
             NativeMethods.SetLayeredWindowAttributes(_hwnd, 0, 255, NativeMethods.LWA_ALPHA);
             NativeMethods.SetWindowPos(
                 _hwnd,
@@ -437,6 +516,26 @@ internal sealed class TransitionController
                 0, 0, 0, 0,
                 NativeMethods.SWP_NOMOVE | NativeMethods.SWP_NOSIZE |
                 NativeMethods.SWP_NOACTIVATE | NativeMethods.SWP_SHOWWINDOW);
+        }
+
+        public MonitorSession CreateTopMostBridge()
+        {
+            // Clone final frame into a top-level topmost layered window.
+            var host = (DesktopLayer.Host?)null;
+            var bridge = Create(_bounds, (DrawingBitmap)_oldBmp.Clone(), (DrawingBitmap)_newBmp.Clone(), host);
+            // Create() with null host already places topmost; force full radius content.
+            bridge.Present(bridge.MaxRadius);
+            Logger.Info($"Topmost bridge hwnd=0x{bridge.Hwnd.ToInt64():X}");
+            return bridge;
+        }
+
+        public void HideSoft()
+        {
+            if (_disposed || _hwnd == IntPtr.Zero)
+                return;
+
+            NativeMethods.SetLayeredWindowAttributes(_hwnd, 0, 0, NativeMethods.LWA_ALPHA);
+            NativeMethods.ShowWindow(_hwnd, NativeMethods.SW_HIDE);
         }
 
         public void Dispose()
@@ -447,7 +546,14 @@ internal sealed class TransitionController
 
             try
             {
-                if (_oldSelect != IntPtr.Zero)
+                if (_hwnd != IntPtr.Zero)
+                {
+                    NativeMethods.ShowWindow(_hwnd, NativeMethods.SW_HIDE);
+                    NativeMethods.DestroyWindow(_hwnd);
+                    _hwnd = IntPtr.Zero;
+                }
+
+                if (_oldSelect != IntPtr.Zero && _memDc != IntPtr.Zero)
                     NativeMethods.SelectObject(_memDc, _oldSelect);
                 if (_dib != IntPtr.Zero)
                     NativeMethods.DeleteObject(_dib);
@@ -455,8 +561,6 @@ internal sealed class TransitionController
                     NativeMethods.DeleteDC(_memDc);
                 if (_screenDc != IntPtr.Zero)
                     NativeMethods.ReleaseDC(IntPtr.Zero, _screenDc);
-                if (_hwnd != IntPtr.Zero)
-                    NativeMethods.DestroyWindow(_hwnd);
             }
             catch (Exception ex)
             {

@@ -1,5 +1,6 @@
 using System.IO;
 using System.Runtime.InteropServices;
+using Microsoft.Win32;
 using WallpaperCycle.Native;
 
 namespace WallpaperCycle.Services;
@@ -67,15 +68,44 @@ internal sealed class DesktopWallpaperService
         }
     }
 
+    /// <summary>
+    /// Write desktop style keys only — does not call SPI or IDesktopWallpaper,
+    /// so the visible desktop does not change (no flicker).
+    /// </summary>
+    public void PrepareSilent(string imagePath)
+    {
+        if (!File.Exists(imagePath))
+            throw new FileNotFoundException("Wallpaper file was not found.", imagePath);
+
+        try
+        {
+            using var key = Registry.CurrentUser.OpenSubKey(@"Control Panel\Desktop", writable: true);
+            if (key is not null)
+            {
+                key.SetValue("WallpaperStyle", "10");
+                key.SetValue("TileWallpaper", "0");
+                key.SetValue("Wallpaper", imagePath);
+            }
+            Logger.Info("Silent registry prepare: " + imagePath);
+        }
+        catch (Exception ex)
+        {
+            Logger.Error("PrepareSilent registry write failed", ex);
+        }
+    }
+
     public void Apply(string imagePath)
     {
         if (!File.Exists(imagePath))
             throw new FileNotFoundException("Wallpaper file was not found.", imagePath);
 
-        // COM Fill mode first so the permanent desktop matches our cover crop.
+        // Still write the registry keys (style + path) – this is silent.
+        PrepareSilent(imagePath);
+
         try
         {
             _api.SetPosition(DesktopWallpaperPosition.Fill);
+
             _api.GetMonitorDevicePathCount(out var count);
             if (count == 0)
             {
@@ -95,23 +125,20 @@ internal sealed class DesktopWallpaperService
             Logger.Error("IDesktopWallpaper.SetWallpaper failed", ex);
         }
 
-        // Also poke the classic SPI path. On some builds this settles the
-        // wallpaper surface faster than waiting on the shell cross-fade alone.
-        try
-        {
-            // UPDATEINIFILE only — avoid SENDWININICHANGE which can force a
-            // desktop/icon refresh flash after the iris.
-            NativeMethods.SystemParametersInfo(
-                NativeMethods.SPI_SETDESKWALLPAPER,
-                0,
-                imagePath,
-                NativeMethods.SPIF_UPDATEINIFILE);
-        }
-        catch (Exception ex)
-        {
-            Logger.Error("SystemParametersInfo SPI_SETDESKWALLPAPER failed", ex);
-        }
+        // IMPORTANT: do NOT call SPI_SETDESKWALLPAPER with SPIF_SENDCHANGE.
+        // IDesktopWallpaper.SetWallpaper is already sufficient to update the live
+        // desktop. Calling SPI with SENDCHANGE forces an immediate, visible
+        // repaint that races with the overlay and produces the start flicker.
+        // If persistence on very old Windows is required, use only UPDATEINIFILE:
+        //
+        // NativeMethods.SystemParametersInfo(
+        //     NativeMethods.SPI_SETDESKWALLPAPER,
+        //     0,
+        //     imagePath,
+        //     NativeMethods.SPIF_UPDATEINIFILE);
 
-        Logger.Info("Wallpaper commit requested: " + imagePath);
+        Logger.Info("Wallpaper commit requested (silent): " + imagePath);
     }
+
+    public void ApplyInstant(string imagePath) => Apply(imagePath);
 }
