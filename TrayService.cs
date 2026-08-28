@@ -10,6 +10,7 @@ internal sealed class TrayService : IDisposable
 {
     private readonly Forms.NotifyIcon _icon;
     private readonly Forms.ToolStripMenuItem _pauseItem;
+    private readonly Forms.ToolStripMenuItem _pinItem;
     private readonly Icon _ownedIcon;
 
     public TrayService()
@@ -24,10 +25,20 @@ internal sealed class TrayService : IDisposable
             PauseToggled?.Invoke(paused);
         };
 
+        _pinItem = new Forms.ToolStripMenuItem("Pin current wallpaper");
+        _pinItem.Click += (_, _) =>
+        {
+            var pinned = !_pinItem.Checked;
+            _pinItem.Checked = pinned;
+            _pinItem.Text = pinned ? "Unpin wallpaper" : "Pin current wallpaper";
+            PinToggled?.Invoke(pinned);
+        };
+
         var menu = new Forms.ContextMenuStrip();
         menu.Items.Add("Open settings", null, (_, _) => OpenSettingsRequested?.Invoke());
         menu.Items.Add("Change wallpaper now", null, (_, _) => NextRequested?.Invoke());
         menu.Items.Add(_pauseItem);
+        menu.Items.Add(_pinItem);
         menu.Items.Add(new Forms.ToolStripSeparator());
         menu.Items.Add("Exit", null, (_, _) => ExitRequested?.Invoke());
 
@@ -44,13 +55,17 @@ internal sealed class TrayService : IDisposable
     public event Action? OpenSettingsRequested;
     public event Action? NextRequested;
     public event Action<bool>? PauseToggled;
+    public event Action<bool>? PinToggled;
     public event Action? ExitRequested;
 
     public void UpdateStatus(SchedulerStatus status)
     {
+        _pinItem.Checked = status.IsPinned;
+        _pinItem.Text = status.IsPinned ? "Unpin wallpaper" : "Pin current wallpaper";
+
         var next = status.NextChangeLocal is { } time
             ? time.ToString("t")
-            : "paused";
+            : (status.IsPinned ? "pinned" : "paused");
         var text = "WallpaperCycle — " + status.Message + " | next " + next;
         if (text.Length > 63)
             text = text[..63];

@@ -61,6 +61,7 @@ public partial class App : Application
             _tray.OpenSettingsRequested += ShowSettings;
             _tray.NextRequested += () => _ = _scheduler.ChangeNowAsync();
             _tray.PauseToggled += paused => _scheduler.SetUserPaused(paused);
+            _tray.PinToggled += pinned => _scheduler.SetPinned(pinned);
             _tray.ExitRequested += () => Shutdown();
             _scheduler.StatusChanged += status => Dispatcher.Invoke(() =>
             {

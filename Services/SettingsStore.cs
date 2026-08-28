@@ -12,6 +12,7 @@ internal sealed class AppSettings
     public bool Shuffle { get; set; } = true;
     public bool StartWithWindows { get; set; } = false;
     public string? LastWallpaperPath { get; set; }
+    public bool IsPinned { get; set; }
 
     // Window placement (settings window)
     public double? WindowLeft { get; set; }

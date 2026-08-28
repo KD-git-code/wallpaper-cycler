@@ -50,6 +50,13 @@ internal sealed class WallpaperLibrary
             _files = files;
     }
 
+    public IReadOnlyList<string> GetAll()
+    {
+        Refresh();
+        lock (_gate)
+            return _files.ToList();
+    }
+
     public string? PickNext(string? currentPath)
     {
         Refresh();

@@ -6,66 +6,66 @@
 
     <!-- Palette -->
     <SolidColorBrush x:Key="BgBrush"
-                     Color="#FF1C1C1C"/>
+        Color="#FF1C1C1C"/>
     <SolidColorBrush x:Key="CardBrush"
-                     Color="#FF262626"/>
+        Color="#FF262626"/>
     <SolidColorBrush x:Key="TextBrush"
-                     Color="#FFF0F0F0"/>
+        Color="#FFF0F0F0"/>
     <SolidColorBrush x:Key="MutedBrush"
-                     Color="#FF9A9A9A"/>
+        Color="#FF9A9A9A"/>
     <SolidColorBrush x:Key="AccentBrush"
-                     Color="#FF60CDFF"/>
+        Color="#FF60CDFF"/>
     <SolidColorBrush x:Key="AccentDimBrush"
-                     Color="#3360CDFF"/>
+        Color="#3360CDFF"/>
     <SolidColorBrush x:Key="ButtonBrush"
-                     Color="#FF333333"/>
+        Color="#FF333333"/>
     <SolidColorBrush x:Key="ButtonHoverBrush"
-                     Color="#FF454545"/>
+        Color="#FF454545"/>
     <SolidColorBrush x:Key="InputBgBrush"
-                     Color="#FF161616"/>
+        Color="#FF161616"/>
     <SolidColorBrush x:Key="BorderSubtleBrush"
-                     Color="#FF3A3A3A"/>
+        Color="#FF3A3A3A"/>
     <SolidColorBrush x:Key="DangerBrush"
-                     Color="#FFFF6B6B"/>
+        Color="#FFFF6B6B"/>
     <SolidColorBrush x:Key="ChipSelectedBg"
-                     Color="#FF1A3A4A"/>
+        Color="#FF1A3A4A"/>
     <SolidColorBrush x:Key="ChipSelectedBorder"
-                     Color="#FF60CDFF"/>
+        Color="#FF60CDFF"/>
     <SolidColorBrush x:Key="SliderTrackBrush"
-                     Color="#FF404040"/>
+        Color="#FF404040"/>
     <SolidColorBrush x:Key="SliderTrackFill"
-                     Color="#FF60CDFF"/>
+        Color="#FF60CDFF"/>
 
     <Style TargetType="TextBlock">
       <Setter Property="Foreground"
-              Value="{StaticResource TextBrush}"/>
+          Value="{StaticResource TextBrush}"/>
       <Setter Property="FontFamily"
-              Value="Segoe UI"/>
+          Value="Segoe UI"/>
     </Style>
 
     <!-- Read-only path TextBox -->
     <Style x:Key="PathBoxStyle"
-           TargetType="TextBox">
+        TargetType="TextBox">
       <Setter Property="Background"
-              Value="{StaticResource InputBgBrush}"/>
+          Value="{StaticResource InputBgBrush}"/>
       <Setter Property="Foreground"
-              Value="{StaticResource TextBrush}"/>
+          Value="{StaticResource TextBrush}"/>
       <Setter Property="BorderBrush"
-              Value="{StaticResource BorderSubtleBrush}"/>
+          Value="{StaticResource BorderSubtleBrush}"/>
       <Setter Property="BorderThickness"
-              Value="1"/>
+          Value="1"/>
       <Setter Property="Padding"
-              Value="10,8"/>
+          Value="10,8"/>
       <Setter Property="FontFamily"
-              Value="Segoe UI"/>
+          Value="Segoe UI"/>
       <Setter Property="FontSize"
-              Value="13"/>
+          Value="13"/>
       <Setter Property="IsReadOnly"
-              Value="True"/>
+          Value="True"/>
       <Setter Property="Cursor"
-              Value="Arrow"/>
+          Value="Arrow"/>
       <Setter Property="VerticalContentAlignment"
-              Value="Center"/>
+          Value="Center"/>
       <Setter Property="Template">
         <Setter.Value>
           <ControlTemplate TargetType="TextBox">
@@ -75,7 +75,7 @@
                     CornerRadius="6"
                     Padding="{TemplateBinding Padding}">
               <ScrollViewer x:Name="PART_ContentHost"
-                            VerticalAlignment="Center"/>
+                  VerticalAlignment="Center"/>
             </Border>
           </ControlTemplate>
         </Setter.Value>
@@ -85,19 +85,19 @@
     <!-- Standard button -->
     <Style TargetType="Button">
       <Setter Property="Background"
-              Value="{StaticResource ButtonBrush}"/>
+          Value="{StaticResource ButtonBrush}"/>
       <Setter Property="Foreground"
-              Value="{StaticResource TextBrush}"/>
+          Value="{StaticResource TextBrush}"/>
       <Setter Property="BorderThickness"
-              Value="0"/>
+          Value="0"/>
       <Setter Property="Padding"
-              Value="14,8"/>
+          Value="14,8"/>
       <Setter Property="FontFamily"
-              Value="Segoe UI"/>
+          Value="Segoe UI"/>
       <Setter Property="FontSize"
-              Value="13"/>
+          Value="13"/>
       <Setter Property="Cursor"
-              Value="Hand"/>
+          Value="Hand"/>
       <Setter Property="Template">
         <Setter.Value>
           <ControlTemplate TargetType="Button">
@@ -106,20 +106,20 @@
                     CornerRadius="6"
                     Padding="{TemplateBinding Padding}">
               <ContentPresenter HorizontalAlignment="Center"
-                                VerticalAlignment="Center"/>
+                  VerticalAlignment="Center"/>
             </Border>
             <ControlTemplate.Triggers>
               <Trigger Property="IsMouseOver"
-                       Value="True">
+                  Value="True">
                 <Setter TargetName="bd"
-                        Property="Background"
-                        Value="{StaticResource ButtonHoverBrush}"/>
+                    Property="Background"
+                    Value="{StaticResource ButtonHoverBrush}"/>
               </Trigger>
               <Trigger Property="IsEnabled"
-                       Value="False">
+                  Value="False">
                 <Setter TargetName="bd"
-                        Property="Opacity"
-                        Value="0.4"/>
+                    Property="Opacity"
+                    Value="0.4"/>
               </Trigger>
             </ControlTemplate.Triggers>
           </ControlTemplate>
@@ -129,14 +129,14 @@
 
     <!-- Accent button -->
     <Style x:Key="AccentButton"
-           TargetType="Button"
-           BasedOn="{StaticResource {x:Type Button}}">
+        TargetType="Button"
+        BasedOn="{StaticResource {x:Type Button}}">
       <Setter Property="Background"
-              Value="{StaticResource AccentBrush}"/>
+          Value="{StaticResource AccentBrush}"/>
       <Setter Property="Foreground"
-              Value="#FF111111"/>
+          Value="#FF111111"/>
       <Setter Property="FontWeight"
-              Value="SemiBold"/>
+          Value="SemiBold"/>
       <Setter Property="Template">
         <Setter.Value>
           <ControlTemplate TargetType="Button">
@@ -145,20 +145,20 @@
                     CornerRadius="6"
                     Padding="{TemplateBinding Padding}">
               <ContentPresenter HorizontalAlignment="Center"
-                                VerticalAlignment="Center"/>
+                  VerticalAlignment="Center"/>
             </Border>
             <ControlTemplate.Triggers>
               <Trigger Property="IsMouseOver"
-                       Value="True">
+                  Value="True">
                 <Setter TargetName="bd"
-                        Property="Background"
-                        Value="#FF7AD8FF"/>
+                    Property="Background"
+                    Value="#FF7AD8FF"/>
               </Trigger>
               <Trigger Property="IsEnabled"
-                       Value="False">
+                  Value="False">
                 <Setter TargetName="bd"
-                        Property="Opacity"
-                        Value="0.4"/>
+                    Property="Opacity"
+                    Value="0.4"/>
               </Trigger>
             </ControlTemplate.Triggers>
           </ControlTemplate>
@@ -168,35 +168,33 @@
 
     <!-- Icon / compact button -->
     <Style x:Key="IconButton"
-           TargetType="Button"
-           BasedOn="{StaticResource {x:Type Button}}">
+        TargetType="Button"
+        BasedOn="{StaticResource {x:Type Button}}">
       <Setter Property="Padding"
-              Value="10,7"/>
+          Value="10,7"/>
       <Setter Property="MinWidth"
-              Value="36"/>
-      <Setter Property="ToolTipService.IsEnabled"
-              Value="True"/>
+          Value="36"/>
     </Style>
 
     <!-- Chip / preset ToggleButton -->
     <Style x:Key="ChipStyle"
-           TargetType="ToggleButton">
+        TargetType="ToggleButton">
       <Setter Property="Background"
-              Value="{StaticResource ButtonBrush}"/>
+          Value="{StaticResource ButtonBrush}"/>
       <Setter Property="Foreground"
-              Value="{StaticResource TextBrush}"/>
+          Value="{StaticResource TextBrush}"/>
       <Setter Property="BorderBrush"
-              Value="Transparent"/>
+          Value="Transparent"/>
       <Setter Property="BorderThickness"
-              Value="1.5"/>
+          Value="1.5"/>
       <Setter Property="Padding"
-              Value="14,7"/>
+          Value="14,7"/>
       <Setter Property="FontFamily"
-              Value="Segoe UI"/>
+          Value="Segoe UI"/>
       <Setter Property="FontSize"
-              Value="13"/>
+          Value="13"/>
       <Setter Property="Cursor"
-              Value="Hand"/>
+          Value="Hand"/>
       <Setter Property="Template">
         <Setter.Value>
           <ControlTemplate TargetType="ToggleButton">
@@ -207,25 +205,25 @@
                     CornerRadius="20"
                     Padding="{TemplateBinding Padding}">
               <ContentPresenter HorizontalAlignment="Center"
-                                VerticalAlignment="Center"/>
+                  VerticalAlignment="Center"/>
             </Border>
             <ControlTemplate.Triggers>
               <Trigger Property="IsMouseOver"
-                       Value="True">
+                  Value="True">
                 <Setter TargetName="bd"
-                        Property="Background"
-                        Value="{StaticResource ButtonHoverBrush}"/>
+                    Property="Background"
+                    Value="{StaticResource ButtonHoverBrush}"/>
               </Trigger>
               <Trigger Property="IsChecked"
-                       Value="True">
+                  Value="True">
                 <Setter TargetName="bd"
-                        Property="Background"
-                        Value="{StaticResource ChipSelectedBg}"/>
+                    Property="Background"
+                    Value="{StaticResource ChipSelectedBg}"/>
                 <Setter TargetName="bd"
-                        Property="BorderBrush"
-                        Value="{StaticResource ChipSelectedBorder}"/>
+                    Property="BorderBrush"
+                    Value="{StaticResource ChipSelectedBorder}"/>
                 <Setter Property="Foreground"
-                        Value="{StaticResource AccentBrush}"/>
+                    Value="{StaticResource AccentBrush}"/>
               </Trigger>
             </ControlTemplate.Triggers>
           </ControlTemplate>
@@ -235,15 +233,15 @@
 
     <!-- Fluent ToggleSwitch with smooth thumb animation -->
     <Style x:Key="ToggleSwitch"
-           TargetType="CheckBox">
+        TargetType="CheckBox">
       <Setter Property="Foreground"
-              Value="{StaticResource TextBrush}"/>
+          Value="{StaticResource TextBrush}"/>
       <Setter Property="FontFamily"
-              Value="Segoe UI"/>
+          Value="Segoe UI"/>
       <Setter Property="FontSize"
-              Value="13"/>
+          Value="13"/>
       <Setter Property="Cursor"
-              Value="Hand"/>
+          Value="Hand"/>
       <Setter Property="Template">
         <Setter.Value>
           <ControlTemplate TargetType="CheckBox">
@@ -256,23 +254,23 @@
               <Border x:Name="Track"
                       Grid.Column="0"
                       Width="44"
-                      Height="22"
+                  Height="22"
                       CornerRadius="11"
                       Background="#FF3A3A3A"
                       VerticalAlignment="Center"
                       Margin="0,0,12,0"
                       ClipToBounds="True">
                 <Canvas Width="44"
-                        Height="22">
+                    Height="22">
                   <Ellipse x:Name="Thumb"
                            Width="16"
-                           Height="16"
+                      Height="16"
                            Fill="#FFF0F0F0"
                            Canvas.Left="3"
                            Canvas.Top="3">
                     <Ellipse.RenderTransform>
                       <TranslateTransform x:Name="ThumbTransform"
-                                          X="0"/>
+                          X="0"/>
                     </Ellipse.RenderTransform>
                   </Ellipse>
                 </Canvas>
@@ -285,20 +283,22 @@
 
             <ControlTemplate.Triggers>
               <Trigger Property="IsChecked"
-                       Value="True">
+                  Value="True">
                 <Setter TargetName="Track"
-                        Property="Background"
-                        Value="{StaticResource AccentBrush}"/>
+                    Property="Background"
+                    Value="{StaticResource AccentBrush}"/>
                 <Setter TargetName="Thumb"
-                        Property="Fill"
-                        Value="#FF111111"/>
+                    Property="Fill"
+                    Value="#FF111111"/>
+                <!-- Static position for initial load; animations run on user toggle -->
+
                 <Trigger.EnterActions>
                   <BeginStoryboard>
                     <Storyboard>
                       <DoubleAnimation Storyboard.TargetName="ThumbTransform"
                                        Storyboard.TargetProperty="X"
                                        To="22"
-                                       Duration="0:0:0.18">
+                          Duration="0:0:0.18">
                         <DoubleAnimation.EasingFunction>
                           <CubicEase EasingMode="EaseOut"/>
                         </DoubleAnimation.EasingFunction>
@@ -312,7 +312,7 @@
                       <DoubleAnimation Storyboard.TargetName="ThumbTransform"
                                        Storyboard.TargetProperty="X"
                                        To="0"
-                                       Duration="0:0:0.18">
+                          Duration="0:0:0.18">
                         <DoubleAnimation.EasingFunction>
                           <CubicEase EasingMode="EaseOut"/>
                         </DoubleAnimation.EasingFunction>
@@ -322,15 +322,15 @@
                 </Trigger.ExitActions>
               </Trigger>
               <Trigger Property="IsMouseOver"
-                       Value="True">
+                  Value="True">
                 <Setter TargetName="Track"
-                        Property="Opacity"
-                        Value="0.92"/>
+                    Property="Opacity"
+                    Value="0.92"/>
               </Trigger>
               <Trigger Property="IsEnabled"
-                       Value="False">
+                  Value="False">
                 <Setter Property="Opacity"
-                        Value="0.45"/>
+                    Value="0.45"/>
               </Trigger>
             </ControlTemplate.Triggers>
           </ControlTemplate>
@@ -341,9 +341,9 @@
     <!-- Smooth custom Slider -->
     <Style TargetType="Slider">
       <Setter Property="Foreground"
-              Value="{StaticResource AccentBrush}"/>
+          Value="{StaticResource AccentBrush}"/>
       <Setter Property="Height"
-              Value="24"/>
+          Value="24"/>
       <Setter Property="Template">
         <Setter.Value>
           <ControlTemplate TargetType="Slider">
@@ -372,37 +372,37 @@
                     <Thumb.Template>
                       <ControlTemplate TargetType="Thumb">
                         <Grid Width="18"
-                              Height="18">
+                            Height="18">
                           <Ellipse x:Name="grip"
                                    Fill="{StaticResource AccentBrush}"
                                    Stroke="#FF1C1C1C"
                                    StrokeThickness="2"
                                    Width="16"
-                                   Height="16"
+                              Height="16"
                                    HorizontalAlignment="Center"
                                    VerticalAlignment="Center"/>
                         </Grid>
                         <ControlTemplate.Triggers>
                           <Trigger Property="IsMouseOver"
-                                   Value="True">
+                              Value="True">
                             <Setter TargetName="grip"
-                                    Property="Width"
-                                    Value="18"/>
+                                Property="Width"
+                                Value="18"/>
                             <Setter TargetName="grip"
-                                    Property="Height"
-                                    Value="18"/>
+                                Property="Height"
+                                Value="18"/>
                           </Trigger>
                           <Trigger Property="IsDragging"
-                                   Value="True">
+                              Value="True">
                             <Setter TargetName="grip"
-                                    Property="Width"
-                                    Value="18"/>
+                                Property="Width"
+                                Value="18"/>
                             <Setter TargetName="grip"
-                                    Property="Height"
-                                    Value="18"/>
+                                Property="Height"
+                                Value="18"/>
                             <Setter TargetName="grip"
-                                    Property="Fill"
-                                    Value="#FF7AD8FF"/>
+                                Property="Fill"
+                                Value="#FF7AD8FF"/>
                           </Trigger>
                         </ControlTemplate.Triggers>
                       </ControlTemplate>
@@ -424,43 +424,41 @@
 
     <!-- Caption buttons — plain Unicode glyphs, always visible -->
     <Style x:Key="CaptionButton"
-           TargetType="Button">
+        TargetType="Button">
       <Setter Property="Background"
-              Value="Transparent"/>
+          Value="Transparent"/>
       <Setter Property="Foreground"
-              Value="{StaticResource MutedBrush}"/>
+          Value="{StaticResource MutedBrush}"/>
       <Setter Property="BorderThickness"
-              Value="0"/>
+          Value="0"/>
       <Setter Property="Width"
-              Value="46"/>
+          Value="46"/>
       <Setter Property="Height"
-              Value="32"/>
+          Value="32"/>
       <Setter Property="FontFamily"
-              Value="Segoe UI"/>
+          Value="Segoe UI"/>
       <Setter Property="FontSize"
-              Value="14"/>
+          Value="14"/>
       <Setter Property="FontWeight"
-              Value="Normal"/>
+          Value="Normal"/>
       <Setter Property="Cursor"
-              Value="Hand"/>
-      <Setter Property="ToolTipService.IsEnabled"
-              Value="True"/>
+          Value="Hand"/>
       <Setter Property="Template">
         <Setter.Value>
           <ControlTemplate TargetType="Button">
             <Border x:Name="bd"
-                    Background="{TemplateBinding Background}">
+                Background="{TemplateBinding Background}">
               <ContentPresenter HorizontalAlignment="Center"
-                                VerticalAlignment="Center"/>
+                  VerticalAlignment="Center"/>
             </Border>
             <ControlTemplate.Triggers>
               <Trigger Property="IsMouseOver"
-                       Value="True">
+                  Value="True">
                 <Setter TargetName="bd"
-                        Property="Background"
-                        Value="#22FFFFFF"/>
+                    Property="Background"
+                    Value="#22FFFFFF"/>
                 <Setter Property="Foreground"
-                        Value="{StaticResource TextBrush}"/>
+                    Value="{StaticResource TextBrush}"/>
               </Trigger>
             </ControlTemplate.Triggers>
           </ControlTemplate>
@@ -469,24 +467,24 @@
     </Style>
 
     <Style x:Key="CaptionCloseButton"
-           TargetType="Button"
-           BasedOn="{StaticResource CaptionButton}">
+        TargetType="Button"
+        BasedOn="{StaticResource CaptionButton}">
       <Setter Property="Template">
         <Setter.Value>
           <ControlTemplate TargetType="Button">
             <Border x:Name="bd"
-                    Background="{TemplateBinding Background}">
+                Background="{TemplateBinding Background}">
               <ContentPresenter HorizontalAlignment="Center"
-                                VerticalAlignment="Center"/>
+                  VerticalAlignment="Center"/>
             </Border>
             <ControlTemplate.Triggers>
               <Trigger Property="IsMouseOver"
-                       Value="True">
+                  Value="True">
                 <Setter TargetName="bd"
-                        Property="Background"
-                        Value="#FFE81123"/>
+                    Property="Background"
+                    Value="#FFE81123"/>
                 <Setter Property="Foreground"
-                        Value="White"/>
+                    Value="White"/>
               </Trigger>
             </ControlTemplate.Triggers>
           </ControlTemplate>

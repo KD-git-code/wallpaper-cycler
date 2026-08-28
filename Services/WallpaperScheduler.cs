@@ -9,6 +9,7 @@ internal sealed class SchedulerStatus
     public required string Message { get; init; }
     public required bool UserPaused { get; init; }
     public required bool FullscreenPaused { get; init; }
+    public required bool IsPinned { get; init; }
     public required DateTime? NextChangeLocal { get; init; }
     public required string? CurrentWallpaper { get; init; }
     public required int WallpaperCount { get; init; }
@@ -69,6 +70,7 @@ internal sealed class WallpaperScheduler : IDisposable
     }
 
     public AppSettings Settings => _settings;
+    public WallpaperLibrary Library => _library;
 
     public event Action<SchedulerStatus>? StatusChanged;
 
@@ -79,7 +81,7 @@ internal sealed class WallpaperScheduler : IDisposable
 
         ScheduleFromNow();
         _timer.Start();
-        PushStatus("Running");
+        PushStatus(_settings.IsPinned ? "Pinned" : "Running");
     }
 
     public void ApplySettings()
@@ -95,10 +97,22 @@ internal sealed class WallpaperScheduler : IDisposable
         _userPaused = paused;
         if (!paused)
             ScheduleFromNow();
-        PushStatus(paused ? "Paused" : "Running");
+        PushStatus(paused ? "Paused" : (_settings.IsPinned ? "Pinned" : "Running"));
+    }
+
+    public void SetPinned(bool pinned)
+    {
+        _settings.IsPinned = pinned;
+        SettingsStore.Save(_settings);
+        if (!pinned)
+            ScheduleFromNow();
+        PushStatus(pinned ? "Pinned" : (_userPaused ? "Paused" : "Running"));
     }
 
     public Task ChangeNowAsync() => ChangeNowAsync(force: true);
+
+    /// <summary>Apply a specific wallpaper via the normal transition pipeline.</summary>
+    public Task ChangeToAsync(string path) => ApplyPathAsync(path, force: true);
 
     public void Dispose()
     {
@@ -123,6 +137,12 @@ internal sealed class WallpaperScheduler : IDisposable
             return;
         }
 
+        if (_settings.IsPinned)
+        {
+            PushStatus("Pinned");
+            return;
+        }
+
         if (_settings.PauseOnFullscreen && _fullscreen.IsFullscreenAppRunning())
         {
             PushStatus("Paused — fullscreen app detected");
@@ -143,6 +163,45 @@ internal sealed class WallpaperScheduler : IDisposable
         if (!force && _userPaused)
             return;
 
+        if (!force && _settings.IsPinned)
+            return;
+
+        if (!force && _settings.PauseOnFullscreen && _fullscreen.IsFullscreenAppRunning())
+        {
+            PushStatus("Paused — fullscreen app detected");
+            return;
+        }
+
+        _library.Refresh();
+        if (_library.Count == 0)
+        {
+            PushStatus("No images found in the wallpaper folder");
+            ScheduleFromNow();
+            return;
+        }
+
+        var next = _library.PickNext(_settings.LastWallpaperPath);
+        if (next is null)
+        {
+            PushStatus("No images found in the wallpaper folder");
+            return;
+        }
+
+        await ApplyPathAsync(next, force).ConfigureAwait(true);
+    }
+
+    private async Task ApplyPathAsync(string next, bool force)
+    {
+        if (_disposed)
+            return;
+
+        if (!File.Exists(next))
+        {
+            PushStatus("Selected image no longer exists");
+            return;
+        }
+
+        // Manual selection still respects fullscreen unless forced by user action
         if (!force && _settings.PauseOnFullscreen && _fullscreen.IsFullscreenAppRunning())
         {
             PushStatus("Paused — fullscreen app detected");
@@ -154,33 +213,19 @@ internal sealed class WallpaperScheduler : IDisposable
 
         try
         {
-            _library.Refresh();
-            if (_library.Count == 0)
-            {
-                PushStatus("No images found in the wallpaper folder");
-                ScheduleFromNow();
-                return;
-            }
-
-            var next = _library.PickNext(_settings.LastWallpaperPath);
-            if (next is null)
-            {
-                PushStatus("No images found in the wallpaper folder");
-                return;
-            }
-
             PushStatus("Animating wallpaper transition");
             var oldPath = _settings.LastWallpaperPath;
             if (string.IsNullOrWhiteSpace(oldPath) || !File.Exists(oldPath))
                 oldPath = _wallpaper.GetCurrentWallpaper();
 
+            // TransitionController is intentionally untouched — same PlayAsync entry point.
             await _transition.PlayAsync(oldPath, next, _settings.AnimationDurationMs, CancellationToken.None)
                 .ConfigureAwait(true);
 
             _settings.LastWallpaperPath = next;
             SettingsStore.Save(_settings);
             ScheduleFromNow();
-            PushStatus("Running");
+            PushStatus(_settings.IsPinned ? "Pinned" : "Running");
             Logger.Info("Applied wallpaper: " + next);
         }
         catch (Exception ex)
@@ -213,13 +258,15 @@ internal sealed class WallpaperScheduler : IDisposable
 
     private void PushStatus(string message)
     {
-        var fullscreen = !_userPaused && _settings.PauseOnFullscreen && _fullscreen.IsFullscreenAppRunning();
+        var fullscreen = !_userPaused && !_settings.IsPinned
+            && _settings.PauseOnFullscreen && _fullscreen.IsFullscreenAppRunning();
         StatusChanged?.Invoke(new SchedulerStatus
         {
             Message = message,
             UserPaused = _userPaused,
             FullscreenPaused = fullscreen,
-            NextChangeLocal = _userPaused ? null : _nextChangeUtc.ToLocalTime(),
+            IsPinned = _settings.IsPinned,
+            NextChangeLocal = (_userPaused || _settings.IsPinned) ? null : _nextChangeUtc.ToLocalTime(),
             CurrentWallpaper = _settings.LastWallpaperPath,
             WallpaperCount = _library.Count
         });
