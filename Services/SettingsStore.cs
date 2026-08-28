@@ -12,6 +12,12 @@ internal sealed class AppSettings
     public bool Shuffle { get; set; } = true;
     public bool StartWithWindows { get; set; } = false;
     public string? LastWallpaperPath { get; set; }
+
+    // Window placement (settings window)
+    public double? WindowLeft { get; set; }
+    public double? WindowTop { get; set; }
+    public double WindowWidth { get; set; }
+    public double WindowHeight { get; set; }
 }
 
 internal static class SettingsStore
